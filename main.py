@@ -1,43 +1,45 @@
-import pprint
-import logfire
+from rich.progress import track
 
 from data_source import get_sample_tweets
-from similarity import find_similar_pairs
+from report import generate_report
+from similarity import TweetSimilarityFinder
+from snoopy import ContradictionDetector
 from topics import classify_topics
 
 
-def setup():
-    logfire.configure(token='pylf_v1_eu_7MbBJfzdplBRdSxsQLMg33dxLmnKZkk0TXNvyH2kr44C')
-
-
 def main():
-    # setup()
-
     tweets = get_sample_tweets()
     classify_topics(tweets)
 
+    contradictions_detector = ContradictionDetector(threshold=0.7)
+    similarity_finder = TweetSimilarityFinder(threshold=0.3, k=5)
+
     candidate_labels = ["politics", "entertainment", "sports", "science", "technology"]
 
-    for topic in candidate_labels:
-        print(f'Processing tweets for topic: {topic}')
+    all_pairs = []
+    seen = set()
 
-        subset = [
-            tweet
-            for tweet in tweets
-            if tweet.topics and topic in tweet.topics
-        ]
+    for topic in track(candidate_labels, total=len(candidate_labels), description="Processing topics"):
+        print(f'=> Processing tweets for topic: {topic}')
+        subset = [t for t in tweets if t.topics and topic in t.topics]
+        print(f'Found {len(subset)} tweets')
 
-        print(f'Found {len(subset)} tweets for topic "{topic}"')
+        similar_pairs = similarity_finder.find_similar_pairs(subset)
+        print(f'Found {len(similar_pairs)} similar pairs')
 
-        if len(subset) < 2:
-            continue
+        for pair in similar_pairs:
+            key = tuple(sorted((pair.tweet1.id, pair.tweet2.id)))
+            if key not in seen:
+                seen.add(key)
+                all_pairs.append(pair)
 
-        similar_pairs = find_similar_pairs(subset)
-        pprint.pprint(similar_pairs)
+    print(f"Total unique similar pairs collected: {len(all_pairs)}")
 
-        # snoop around to find contradictions
+    contradictions = contradictions_detector.detect(all_pairs)
+    print(f"Found {len(contradictions)} total contradictions:")
 
-    # report the contradictions
+    generate_report(contradictions)
+    print("Done!")
 
 
 if __name__ == '__main__':
