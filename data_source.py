@@ -3,18 +3,38 @@ from dataclasses import dataclass
 from typing import Dict, Optional
 
 
+@dataclass(frozen=True)
+class ScraperTweet:
+    id: int
+    text: str
+    timestamp: str
+
+    def __repr__(self):
+        return f"{self.text[:60]}{'...' if len(self.text) > 60 else ''}"
+
+    def __eq__(self, other):
+        return isinstance(other, ScraperTweet) and self.text == other.text
+
+    def __hash__(self):
+        return hash(self.text)
+
+
 @dataclass
 class Tweet:
-    id: str
+    id: int
     text: str
     timestamp: str
     # label → score
     topics: Optional[Dict[str, float]] = None
 
     def __repr__(self):
-        top_topics = sorted(self.topics.items(), key=lambda x: -x[1])
-        topics_str = ', '.join(f"{t}:{s:.2f}" for t, s in top_topics if s >= 0.5)
-        return f"[{topics_str}] : {self.text[:30]}{'...' if len(self.text) > 50 else ''}"
+        topics_str = "-"
+
+        if self.topics:
+            top_topics = sorted(self.topics.items(), key=lambda x: -x[1])
+            topics_str = ', '.join(f"{t}:{s:.2f}" for t, s in top_topics)
+
+        return f"[{topics_str}] : {self.text[:60]}{'...' if len(self.text) > 60 else ''}"
 
 
 @dataclass
@@ -38,3 +58,13 @@ def get_sample_tweets():
         tweets = [Tweet(**tweet) for tweet in tweets]
 
     return tweets
+
+
+def get_extracted_tweets():
+    with open("D:/code/prism/data/extracted_tweets.json", "r") as f:
+        tweets = json.load(f)
+        tweets = [Tweet(**tweet) for tweet in tweets]
+
+    return tweets
+
+
