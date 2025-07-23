@@ -25,6 +25,7 @@ dependencies:
     - litellm
     - logfire
     - faiss
+    - crawl4ai
     -   pip:
             - albumentations
             - opencv-python
