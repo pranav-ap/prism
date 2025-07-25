@@ -61,7 +61,7 @@ def get_sample_tweets():
 
 
 def get_extracted_tweets():
-    with open("D:/code/prism/data/extracted_tweets.json", "r") as f:
+    with open("D:/code/prism/output/extracted_tweets.json", "r") as f:
         tweets = json.load(f)
         tweets = [Tweet(**tweet) for tweet in tweets]
 

@@ -3,18 +3,18 @@ from rich.progress import track
 from data_source import get_extracted_tweets
 from report import generate_report
 from similarity import TweetSimilarityFinder
-from snoopy import ContradictionDetector
+from snoopy import ContradictionDetector, ContradictionDetectorLiteLLM
 from topics import classify_topics
 
 
 def main():
     tweets = get_extracted_tweets()
-    classify_topics(tweets)
-
-    contradictions_detector = ContradictionDetector(threshold=0.7)
-    similarity_finder = TweetSimilarityFinder(threshold=0.6, k=5)
-
     candidate_labels = ["politics", "entertainment", "sports", "science", "technology"]
+
+    classify_topics(tweets, candidate_labels)
+
+    similarity_finder = TweetSimilarityFinder(threshold=0.4, k=10)
+    contradictions_detector = ContradictionDetectorLiteLLM(threshold=0.5)
 
     all_pairs = []
     seen = set()

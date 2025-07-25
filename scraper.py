@@ -59,7 +59,7 @@ async def main() -> None:
         if not context.session:
             raise RuntimeError('Session not found')
 
-        usernames = ['nytimes', 'techcrunch']
+        usernames = ['krystalball']
         username = random.choice(usernames)
 
         await context.page.type('.search-bar > form:nth-child(1) > input:nth-child(2)', username, delay=100)
@@ -142,7 +142,7 @@ async def main() -> None:
         context.log.info(f'Total tweets: {len(extracted_tweets)}')
         extracted_tweets = [asdict(t) for t in extracted_tweets]
 
-        with open('data/extracted_tweets.json', 'w', encoding='utf-8') as f:
+        with open('output/extracted_tweets.json', 'w', encoding='utf-8') as f:
             json.dump(extracted_tweets, f, ensure_ascii=False, indent=2)
 
     try:
