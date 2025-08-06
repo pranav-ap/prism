@@ -1,3 +1,6 @@
+import langdetect
+langdetect.DetectorFactory.seed = 0
+
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
@@ -34,3 +37,9 @@ Translation :
         )
 
         return outputs
+
+    def lazy_translate(self, tweets):
+        for t in tweets:
+            lang = langdetect.detect(t.text)
+            if lang != 'en':
+                t.text = self.translate(t.text)

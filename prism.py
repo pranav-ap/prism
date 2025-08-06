@@ -1,50 +1,66 @@
-from typing import List
-
-from rich.progress import track
-import langdetect
-
-
-from core.data_source import Tweet, get_extracted_tweets
+from core.contra import ContradictionDetectorLiteLLM
+from core.data_source import get_extracted_tweets
 from core.report import generate_report
-from core.similarity import TweetSimilarityFinder
-from core.snoopy import ContradictionDetectorLiteLLM
-from core.topics import classify_topics
+from core.similarity import SimilarityFinder
+from core.topics import TopicClassfier
+from core.translator import Translator
+
+
+def prepare_tweets(usernames, CANDIDATE_LABELS):
+    translator = Translator()
+    topic_classifier = TopicClassfier(candidate_labels=CANDIDATE_LABELS)
+
+    tweets_by_user = {}
+
+    for index, username in enumerate(usernames):
+        print(f'Processing tweets for user: {username}')
+
+        user_tweets = get_extracted_tweets(username)
+
+        if True:
+            translator.lazy_translate(user_tweets)
+
+        topic_classifier.classify(user_tweets)
+
+        tweets_by_user[username] = user_tweets
+
+    if len(usernames) == 1:
+        username = usernames[0]
+        print(f'Only one user ({username}) provided. Self-comparison will be performed.')
+        tweets_by_user[f'{username}_2'] = tweets_by_user[username]
+
+    return tweets_by_user
 
 
 def main():
-    langdetect.DetectorFactory.seed = 0
+    usernames = [
+        'krystalball',
+        # 'nytimes',
+        # 'nytimeses'
+    ]
 
-    username = 'krystalball'
-    tweets: List[Tweet] = get_extracted_tweets(username)
+    CANDIDATE_LABELS = [
+        "politics",
+        "entertainment",
+        "sports",
+        "science",
+        "technology",
+    ]
 
-    for t in tweets:
-        lang = langdetect.detect(t.text)
-        if lang != 'en':
-            pass
+    tweets_by_user = prepare_tweets(
+        usernames,
+        CANDIDATE_LABELS
+    )
 
-    candidate_labels = ["politics", "entertainment", "sports", "science", "technology"]
-    classify_topics(tweets, candidate_labels)
+    similarity_finder = SimilarityFinder(threshold=0.5, k=5)
+    similar_pairs = similarity_finder.detect(tweets_by_user)
+    print(f"Detected {len(similar_pairs)} unique similar pairs")
+    del similarity_finder
 
-    similarity_finder = TweetSimilarityFinder(threshold=0.5, k=5)
     contradictions_detector = ContradictionDetectorLiteLLM(threshold=0.5)
-
-    candidate_labels += ["other"]
-    all_pairs = []
-
-    for topic in track(candidate_labels, total=len(candidate_labels), description="Processing topics"):
-        print(f'=> Processing tweets for topic: {topic}')
-        subset = [t for t in tweets if t.topics and topic in t.topics]
-        print(f'Found {len(subset)} tweets')
-
-        similar_pairs = similarity_finder.find_similar_pairs(subset)
-        print(f'Found {len(similar_pairs)} similar pairs')
-
-        all_pairs.extend(similar_pairs)
-
-    print(f"Total unique similar pairs collected: {len(all_pairs)}")
-
-    contradictions = contradictions_detector.detect(all_pairs)
-    print(f"Found {len(contradictions)} total contradictions")
+    contradictions = contradictions_detector.detect(similar_pairs)
+    print(f"Found {len(contradictions)} total contradictions!")
+    del contradictions_detector
 
     generate_report(contradictions)
     print("Done!")

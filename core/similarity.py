@@ -1,4 +1,5 @@
 from typing import List, Set, Tuple
+from itertools import combinations
 
 import faiss
 from sentence_transformers import SentenceTransformer
@@ -6,7 +7,7 @@ from sentence_transformers import SentenceTransformer
 from core.data_source import Tweet, TweetPair
 
 
-class TweetSimilarityFinder:
+class SimilarityFinder:
     def __init__(self, threshold: float, k: int):
         self.model = SentenceTransformer("all-MiniLM-L6-v2")
 
@@ -85,3 +86,19 @@ class TweetSimilarityFinder:
 
         return similar_pairs
 
+    def detect(self, tweets_by_user):
+        all_pairs = []
+
+        for u1, u2 in combinations(tweets_by_user.keys(), 2):
+            print(f'Finding similar pairs between {u1} and {u2}')
+
+            similar_pairs = self.find_similar_pairs_between(
+                tweets_by_user[u1],
+                tweets_by_user[u2]
+            )
+
+            print(f'Found {len(similar_pairs)} similar pairs')
+
+            all_pairs.extend(similar_pairs)
+
+        return all_pairs
