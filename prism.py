@@ -1,6 +1,10 @@
-from rich.progress import track
+from typing import List
 
-from core.data_source import get_extracted_tweets
+from rich.progress import track
+import langdetect
+
+
+from core.data_source import Tweet, get_extracted_tweets
 from core.report import generate_report
 from core.similarity import TweetSimilarityFinder
 from core.snoopy import ContradictionDetectorLiteLLM
@@ -8,9 +12,15 @@ from core.topics import classify_topics
 
 
 def main():
-    # username = 'krystalball'
-    username = 'nytimes'
-    tweets = get_extracted_tweets(username)
+    langdetect.DetectorFactory.seed = 0
+
+    username = 'krystalball'
+    tweets: List[Tweet] = get_extracted_tweets(username)
+
+    for t in tweets:
+        lang = langdetect.detect(t.text)
+        if lang != 'en':
+            pass
 
     candidate_labels = ["politics", "entertainment", "sports", "science", "technology"]
     classify_topics(tweets, candidate_labels)

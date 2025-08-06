@@ -1,11 +1,11 @@
 from rich.progress import track
 
-from data_source import get_extracted_tweets
-from similarity import TweetSimilarityFinder
-from snoopy import ContradictionDetectorLiteLLM
-from topics import classify_topics
-from translator import Translator
-from report import generate_report
+from core.data_source import get_extracted_tweets
+from core.similarity import TweetSimilarityFinder
+from core.snoopy import ContradictionDetectorLiteLLM
+from core.topics import classify_topics
+from core.translator import Translator
+from core.report import generate_report
 
 
 def main():

@@ -48,15 +48,20 @@ class TweetPair:
 
     def __repr__(self):
         return (
-            f"Similarity Score : {self.similarity_score}, Contradiction Score : {self.contradiction_score}\n"
-            f"Reason : {self.contradiction_reason}\n"
-            f"- {self.tweet1.text[:50]}{'...' if len(self.tweet1.text) > 50 else ''}\n"
-            f"- {self.tweet2.text[:50]}{'...' if len(self.tweet2.text) > 50 else ''}\n"
+            f"""
+# Tweet Pair
+    - {self.tweet1.text[:50]}{'...' if len(self.tweet1.text) > 50 else ''}
+    - {self.tweet2.text[:50]}{'...' if len(self.tweet2.text) > 50 else ''}
+    
+  Similarity Score      : {self.similarity_score}
+  Contradiction Score   : {self.contradiction_score}
+  Contradiction Reason  : {self.contradiction_reason}
+"""
         )
 
 
 def get_sample_tweets():
-    with open("./data/sample_tweets.json", "r") as f:
+    with open("../data/sample_tweets.json", "r") as f:
         tweets = json.load(f)
         tweets = [Tweet(**tweet) for tweet in tweets]
 

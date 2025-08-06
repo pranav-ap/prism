@@ -1,7 +1,7 @@
 def generate_report(contradictions):
     print('Generating contradiction report...')
 
-    with open("output/contradictions_report.txt", "w", encoding="utf-8") as f:
+    with open("../output/contradictions_report.txt", "w", encoding="utf-8") as f:
         f.write("Contradiction Report\n")
         f.write("====================\n\n")
         f.write(f"Total contradictions found: {len(contradictions)}\n\n")

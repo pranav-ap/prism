@@ -3,7 +3,7 @@ from typing import List, Set, Tuple
 import faiss
 from sentence_transformers import SentenceTransformer
 
-from data_source import Tweet, TweetPair
+from core.data_source import Tweet, TweetPair
 
 
 class TweetSimilarityFinder:

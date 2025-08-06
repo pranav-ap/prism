@@ -4,7 +4,7 @@ import re
 import random
 from dataclasses import asdict
 from datetime import timedelta
-from typing import Set
+from typing import List, Set
 
 from crawlee import ConcurrencySettings, Request
 from crawlee.configuration import Configuration
@@ -13,8 +13,9 @@ from crawlee.crawlers import (
     PlaywrightCrawlingContext,
 )
 from crawlee.sessions import SessionPool
+from playwright.async_api import ElementHandle
 
-from data_source import ScraperTweet
+from core.data_source import ScraperTweet
 
 
 async def human_delay(min_delay=1.0, max_delay=2.5):
@@ -30,13 +31,8 @@ def process_text(text: str) -> str:
     return cleaned
 
 
-async def tweet_extraction_handler(context: PlaywrightCrawlingContext) -> Set[ScraperTweet]:
+async def go_to_user_page(context: PlaywrightCrawlingContext) -> None:
     username = context.request.user_data.get('username', '')
-
-    if not username:
-        raise ValueError('Username is required in user_data')
-
-    extracted_tweets = set()
 
     await context.page.get_by_placeholder('Search...').type(username, delay=100)
     await context.page.click('span.icon-search')
@@ -58,64 +54,87 @@ async def tweet_extraction_handler(context: PlaywrightCrawlingContext) -> Set[Sc
     await link.click(timeout=2000)
     await human_delay()
 
-    MAX_PAGES = context.request.user_data.get('max_pages', 3)
-    current_page = 0
+    link = context.page.locator(f'a.icon-cog[title="Preferences"]').first
 
-    while True and current_page < MAX_PAGES:
-        current_page += 1
-        new_tweets_count = 0
+    if await link.count() == 0:
+        raise ValueError(f'Preferences options not found!')
+
+    print('Found Preferences link')
+    await link.click(timeout=2000)
+    await human_delay()
+
+    await context.page.get_by_text('Infinite scrolling (experimental, requires JavaScript)').click(timeout=2000)
+    await context.page.get_by_text('Hide pinned tweets').click(timeout=2000)
+    await context.page.get_by_text('Save preferences').click(timeout=3000)
+    await human_delay()
+
+    await context.page.get_by_text('Tweets & Replies').click(timeout=3000)
+    await human_delay()
+
+
+async def scrape_tweets(context: PlaywrightCrawlingContext) -> List[ElementHandle]:
+    MAX_TWEETS = context.request.user_data.get('max_tweets', 20)
+    old_tweets_count = 0
+
+    while old_tweets_count < MAX_TWEETS:
+        # scroll to end
+        await context.page.locator('div.top-ref div.icon-container a.icon-down').scroll_into_view_if_needed()
+        await human_delay()
 
         tweets = await context.page.query_selector_all('.timeline-item')
 
-        for tweet_el in tweets:
-            if await tweet_el.query_selector('div.retweet-header') or await tweet_el.query_selector('div.pinned'):
-                continue
+        if len(tweets) > old_tweets_count:
+            old_tweets_count = len(tweets)
+            continue
 
-            content_el, time_el = await asyncio.gather(
-                tweet_el.query_selector('div.tweet-content.media-body'),
-                tweet_el.query_selector('div.tweet-name-row span.tweet-date a')
-            )
+        print(f'Found {old_tweets_count} tweets, extracting...')
+        return tweets
 
-            if not content_el or not time_el:
-                continue
+    return []
 
-            time = await time_el.get_attribute('title')
 
-            text = await content_el.inner_text()
-            text = process_text(text)
+async def extract_tweets(tweets: List[ElementHandle]) -> Set[ScraperTweet]:
+    extracted_tweets: Set[ScraperTweet] = set()
 
-            if not len(text):
-                continue
+    for tweet_el in tweets:
+        if await tweet_el.query_selector('div.retweet-header, div.pinned'):
+            continue
 
-            extracted_tweet = ScraperTweet(
-                id=len(extracted_tweets),
-                text=text,
-                timestamp=time,
-            )
+        content_el, time_el = await asyncio.gather(
+            tweet_el.query_selector('div.tweet-content.media-body'),
+            tweet_el.query_selector('div.tweet-name-row span.tweet-date a')
+        )
 
-            extracted_tweets.add(extracted_tweet)
-            new_tweets_count += 1
+        if not content_el or not time_el:
+            continue
 
-        print(f'Collected {new_tweets_count} new tweets (total: {len(extracted_tweets)})')
+        time = await time_el.get_attribute('title')
 
-        show_more = await context.page.query_selector('div.show-more a')
-        if not show_more:
-            print('No more "Show more" button found.')
-            break
+        text = await content_el.inner_text()
+        text = process_text(text)
 
-        await show_more.click()
-        print('Clicked "Show more"...')
-        await human_delay()
+        if not len(text):
+            continue
 
-        await context.page.wait_for_selector('.timeline-item', timeout=5000)
+        extracted_tweet = ScraperTweet(
+            id=len(extracted_tweets),
+            text=text,
+            timestamp=time,
+        )
 
-        if new_tweets_count == 0:
-            print('No new tweets found after clicking "Show more".')
-            break
+        extracted_tweets.add(extracted_tweet)
 
-    print(f'Total tweets: {len(extracted_tweets)}')
+    print(f'Extracted {len(extracted_tweets)} tweets')
 
     return extracted_tweets
+
+
+async def tweet_extraction_handler(context: PlaywrightCrawlingContext) -> Set[ScraperTweet]:
+    await go_to_user_page(context)
+    tweets = await scrape_tweets(context)
+    tweets = await extract_tweets(tweets)
+
+    return tweets
 
 
 def setup_crawler() -> PlaywrightCrawler:
@@ -132,9 +151,9 @@ def setup_crawler() -> PlaywrightCrawler:
         session_pool=SessionPool(
             max_pool_size=1,
             create_session_settings={
-                'max_usage_count': 800,
+                'max_usage_count': 1000,
                 'max_age': timedelta(hours=2),
-                'max_error_score': 50,
+                'max_error_score': 500,
             },
         ),
         use_incognito_pages=True,
@@ -169,8 +188,8 @@ async def main() -> None:
     crawler: PlaywrightCrawler = setup_crawler()
 
     usernames = [
-        # 'krystalball',
-        'nytimes',
+        'krystalball',
+        # 'nytimes',
         # 'nytimeses'
     ]
 
@@ -181,7 +200,7 @@ async def main() -> None:
                 label='home',
                 userData={
                     'username': username,
-                    'max_pages': 5,
+                    'max_tweets': 100,
                 }
             )
 
