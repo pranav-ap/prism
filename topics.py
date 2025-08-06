@@ -20,4 +20,4 @@ def classify_topics(tweets, candidate_labels):
             if score >= THRESHOLD
         }
 
-        tweet.topics = filtered if filtered else {"unknown": 1.0}
+        tweet.topics = filtered if filtered else {"other": 1.0}

@@ -50,3 +50,38 @@ class TweetSimilarityFinder:
                         ))
 
         return similar_pairs
+
+    def find_similar_pairs_between(self, tweets_a: List[Tweet], tweets_b: List[Tweet]) -> List[TweetPair]:
+        if not tweets_a or not tweets_b:
+            return []
+
+        emb_a = self._get_embeddings(tweets_a)
+        emb_b = self._get_embeddings(tweets_b)
+
+        index = self._build_faiss_index(emb_b)
+        # for each in A, get top-k in B
+        scores, indices = index.search(emb_a, k=self.k)
+
+        seen: Set[Tuple[str, str]] = set()
+        similar_pairs: List[TweetPair] = []
+
+        for i, (score_row, idx_row) in enumerate(zip(scores, indices)):
+            for j, score in zip(idx_row, score_row):
+                if score >= self.threshold:
+                    t1 = tweets_a[i]
+                    t2 = tweets_b[j]
+
+                    key = tuple(sorted((t1.id, t2.id)))
+                    if key in seen:
+                        continue
+
+                    seen.add(key)
+
+                    similar_pairs.append(TweetPair(
+                        tweet1=t1,
+                        tweet2=t2,
+                        similarity_score=score
+                    ))
+
+        return similar_pairs
+

@@ -41,27 +41,30 @@ class Tweet:
 class TweetPair:
     tweet1: Tweet
     tweet2: Tweet
+
     similarity_score: float
     contradiction_score: Optional[float] = None
+    contradiction_reason: Optional[str] = None
 
     def __repr__(self):
         return (
             f"Similarity Score : {self.similarity_score}, Contradiction Score : {self.contradiction_score}\n"
+            f"Reason : {self.contradiction_reason}\n"
             f"- {self.tweet1.text[:50]}{'...' if len(self.tweet1.text) > 50 else ''}\n"
             f"- {self.tweet2.text[:50]}{'...' if len(self.tweet2.text) > 50 else ''}\n"
         )
 
 
 def get_sample_tweets():
-    with open("D:/code/prism/data/sample_tweets.json", "r") as f:
+    with open("./data/sample_tweets.json", "r") as f:
         tweets = json.load(f)
         tweets = [Tweet(**tweet) for tweet in tweets]
 
     return tweets
 
 
-def get_extracted_tweets():
-    with open("D:/code/prism/output/extracted_tweets.json", "r") as f:
+def get_extracted_tweets(username: str):
+    with open(f"./output/extracted_tweets_{username}.json", "r") as f:
         tweets = json.load(f)
         tweets = [Tweet(**tweet) for tweet in tweets]
 

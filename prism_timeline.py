@@ -3,21 +3,23 @@ from rich.progress import track
 from data_source import get_extracted_tweets
 from report import generate_report
 from similarity import TweetSimilarityFinder
-from snoopy import ContradictionDetector, ContradictionDetectorLiteLLM
+from snoopy import ContradictionDetectorLiteLLM
 from topics import classify_topics
 
 
 def main():
-    tweets = get_extracted_tweets()
-    candidate_labels = ["politics", "entertainment", "sports", "science", "technology"]
+    # username = 'krystalball'
+    username = 'nytimes'
+    tweets = get_extracted_tweets(username)
 
+    candidate_labels = ["politics", "entertainment", "sports", "science", "technology"]
     classify_topics(tweets, candidate_labels)
 
-    similarity_finder = TweetSimilarityFinder(threshold=0.4, k=10)
+    similarity_finder = TweetSimilarityFinder(threshold=0.5, k=5)
     contradictions_detector = ContradictionDetectorLiteLLM(threshold=0.5)
 
+    candidate_labels += ["other"]
     all_pairs = []
-    seen = set()
 
     for topic in track(candidate_labels, total=len(candidate_labels), description="Processing topics"):
         print(f'=> Processing tweets for topic: {topic}')
@@ -27,11 +29,7 @@ def main():
         similar_pairs = similarity_finder.find_similar_pairs(subset)
         print(f'Found {len(similar_pairs)} similar pairs')
 
-        for pair in similar_pairs:
-            key = tuple(sorted((pair.tweet1.id, pair.tweet2.id)))
-            if key not in seen:
-                seen.add(key)
-                all_pairs.append(pair)
+        all_pairs.extend(similar_pairs)
 
     print(f"Total unique similar pairs collected: {len(all_pairs)}")
 

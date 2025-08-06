@@ -51,7 +51,7 @@ class ContradictionDetectorLiteLLM:
             f"""You are given two tweets. Determine the logical relationship between them by choosing one of the following answers:
             
 - "Contradiction" → if the tweets make opposing or incompatible claims about the same topic or event.
-- "No Contradiction" → if the tweets are about the same topic or event, but do not contradict each other.
+- "No Contradiction" → if the tweets are about the same topic or event, but do not contradict each other in a big way.
 - "Not Comparable" → if the tweets are about different topics, unrelated events, or lack comparable claims.
 
 Then, provide a short explanation for your answer in the reason field.
@@ -70,7 +70,7 @@ Answer:
 
         response = litellm.completion(
             model="ollama/llama3.2:3b-instruct-fp16",
-            messages = [{
+            messages=[{
                 "content": message,
                 "role": "user"
             }],
@@ -99,13 +99,13 @@ Answer:
     def detect(self, pairs: List[TweetPair]) -> List[TweetPair]:
         for p in pairs:
             response = self._detect(p.tweet1.text, p.tweet2.text)
+            p.contradiction_reason = response.get("reason", "")
+            answer = response.get("answer", "").strip().lower()
 
-            if response["answer"] == "contradiction":
+            if answer == "contradiction":
                 p.contradiction_score = 1.0
-            elif response["answer"] == "no contradiction":
+            elif answer == "no contradiction":
                 p.contradiction_score = 0.0
-            else:
-                p.contradiction_score = None
 
         return [
             pair for pair in pairs

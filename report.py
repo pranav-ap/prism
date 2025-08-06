@@ -8,5 +8,6 @@ def generate_report(contradictions):
 
         for i, pair in enumerate(contradictions, 1):
             f.write(f"{i}. Similarity Score: {pair.similarity_score:.3f}, Contradiction Score: {pair.contradiction_score:.3f}\n")
-            f.write(f"   - Tweet 1: {pair.tweet1.text.strip()}\n")
-            f.write(f"   - Tweet 2: {pair.tweet2.text.strip()}\n\n")
+            f.write(f"   - Reason   : {pair.contradiction_reason}\n")
+            f.write(f"   - Tweet 1  : {pair.tweet1.text.strip()}\n")
+            f.write(f"   - Tweet 2  : {pair.tweet2.text.strip()}\n\n")
