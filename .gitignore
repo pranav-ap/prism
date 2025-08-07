@@ -1,6 +1,7 @@
 ./data/
 ./storage/
 ./output/
+.deepeval/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

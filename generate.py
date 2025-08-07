@@ -1,8 +1,10 @@
 import json
 from dataclasses import dataclass, asdict
-from typing import List
-
+from typing import List, Literal, TypeAlias
 import litellm
+
+
+LabelType: TypeAlias = Literal["Contradiction", "No Contradiction", "Not Comparable"]
 
 
 @dataclass
@@ -15,15 +17,16 @@ class SyntheticTweetPair:
 
 class SyntheticTweetDatasetGenerator:
     def __init__(self):
-        pass
+        self.model = "ollama/llama3.2:3b-instruct-fp16"
+        self.api_base = "http://localhost:11434"
 
-    def _build_prompt(self, label: str) -> str:
-        message = f"""Generate a pair of tweets with the following relationship: "{label}".
+    @staticmethod
+    def _build_prompt(label: LabelType) -> str:
+        return f"""Generate a pair of tweets with the following relationship: "{label}".
 
 Requirements:
 - Return your answer as a JSON object with the following keys: "tweet1", "tweet2", "label", "reason".
 - The tweets should sound realistic and casual.
-- The label should match one of the three relationships - ["Contradiction", "No Contradiction", "Not Comparable"].
 - Keep each tweet under 30 words.
 
 Example format:
@@ -32,22 +35,15 @@ Example format:
   "tweet2": "Tweet content...",
   "label": "{label}",
   "reason": "Short explanation."
-}}
-"""
+}}"""
 
-        return message
-
-    def _generate_one(self, label: str) -> SyntheticTweetPair:
+    def _generate_one(self, label: LabelType) -> SyntheticTweetPair:
         message = self._build_prompt(label)
-
         response = litellm.completion(
-            model="ollama/llama3.2:3b-instruct-fp16",
-            messages=[{
-                "content": message,
-                "role": "user"
-            }],
+            model=self.model,
+            api_base=self.api_base,
             temperature=0,
-            api_base="http://localhost:11434",
+            messages=[{"role": "user", "content": message}],
             response_format={
                 "type": "json_schema",
                 "json_schema": {
@@ -65,32 +61,21 @@ Example format:
             },
         )
 
-        response = response["choices"][0]["message"]["content"]
-        response = response.strip().lower()
-        response = json.loads(response)
+        data = json.loads(response["choices"][0]["message"]["content"].strip())
 
-        return SyntheticTweetPair(**response)
+        return SyntheticTweetPair(**data)
 
-    def generate(self, labels: List[str], n_per_class: int) -> List[SyntheticTweetPair]:
-        all_pairs = []
-
-        for label in labels:
-            for _ in range(n_per_class):
-                pair = self._generate_one(label)
-                all_pairs.append(pair)
-
-        return all_pairs
+    def generate(self, labels: List[LabelType], n_per_class: int) -> List[SyntheticTweetPair]:
+        return [self._generate_one(label) for label in labels for _ in range(n_per_class)]
 
 
 def main():
     generator = SyntheticTweetDatasetGenerator()
-
-    labels = ["Contradiction", "No Contradiction", "Not Comparable"]
+    labels: List[LabelType] = ["Contradiction", "No Contradiction", "Not Comparable"]
     dataset = generator.generate(labels, n_per_class=2)
 
     with open('output/generated_tweets.json', 'w', encoding='utf-8') as f:
-        dataset = [asdict(pair) for pair in dataset]
-        json.dump(dataset, f, ensure_ascii=False, indent=2)
+        json.dump([asdict(pair) for pair in dataset], f, ensure_ascii=True, indent=2)
 
 
 if __name__ == '__main__':
