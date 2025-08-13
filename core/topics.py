@@ -1,31 +1,56 @@
+from typing import Dict, List
+from bertopic import BERTopic
 from transformers import pipeline
+from bertopic.representation import TextGeneration
+
+from core.data_source import Tweet
 
 
-class TopicClassfier:
-    def __init__(self, candidate_labels):
-        self.candidate_labels = candidate_labels
+class TopicClassifier:
+    def __init__(self):
+        prompt = "I have a topic described by the following keywords: [KEYWORDS]. Based on the previous keywords, what is this topic about?"
+        generator = pipeline('text2text-generation', model='google/flan-t5-base')
 
-        self.classifier = pipeline(
-            task="zero-shot-classification",
-            model="facebook/bart-large-mnli"
+        representation_model = TextGeneration(
+            generator,
+            prompt=prompt,
         )
 
-    def classify(self, tweets):
+        self.topic_model = BERTopic(
+            representation_model=representation_model
+        )
+
+    def classify(self, tweets: List[Tweet]):
         tweet_texts = [tweet.text for tweet in tweets]
 
-        results = self.classifier(
-            tweet_texts,
-            self.candidate_labels,
-            multi_label=True
+        topics, probs = self.topic_model.fit_transform(tweet_texts)
+
+        labels = self.topic_model.generate_topic_labels(
+            nr_words=3,
+            topic_prefix=False,
+            word_length=15,
+            separator=", "
         )
+
+        self.topic_model.set_topic_labels(labels)
+
+        available_topics = self.topic_model.get_topics().keys()
+        label_mapping: Dict[str, str] = dict(zip(
+            available_topics,
+            labels
+        ))
 
         THRESHOLD = 0.5
 
-        for tweet, res in zip(tweets, results):
-            filtered = {
-                label: score
-                for label, score in zip(res["labels"], res["scores"])
-                if score >= THRESHOLD
-            }
+        for tweet, topic, prob in zip(tweets, topics, probs):
+            if prob > THRESHOLD:
+                continue
 
-            tweet.topics = filtered if filtered else {"other": 1.0}
+            if topic == -1:
+                tweet.topics = {"other": 1.0}
+            else:
+                topic = str(topic)
+                tweet.topics = {label_mapping[topic]: prob}
+
+        return tweets
+
