@@ -35,8 +35,6 @@ def prepare_tweets(usernames, CANDIDATE_LABELS):
 def main():
     usernames = [
         'krystalball',
-        # 'nytimes',
-        # 'nytimeses'
     ]
 
     CANDIDATE_LABELS = [
