@@ -2,27 +2,28 @@ from core.contra import ContradictionDetectorLiteLLM
 from core.data_source import get_extracted_tweets
 from core.report import generate_report
 from core.similarity import SimilarityFinder
-from core.topics import TopicClassfier
+from core.topics import TopicClassifier
 from core.translator import Translator
 
 
-def prepare_tweets(usernames, CANDIDATE_LABELS):
-    translator = Translator()
-    topic_classifier = TopicClassfier(candidate_labels=CANDIDATE_LABELS)
+def prepare_tweets(usernames):
+    translator = Translator(only_lazy=True)
+    topic_classifier = TopicClassifier()
 
     tweets_by_user = {}
 
     for index, username in enumerate(usernames):
         print(f'Processing tweets for user: {username}')
-
         user_tweets = get_extracted_tweets(username)
 
         if True:
             translator.lazy_translate(user_tweets)
 
         topic_classifier.classify(user_tweets)
-
         tweets_by_user[username] = user_tweets
+
+    del translator
+    del topic_classifier
 
     if len(usernames) == 1:
         username = usernames[0]
@@ -39,18 +40,7 @@ def main():
         # 'nytimeses'
     ]
 
-    CANDIDATE_LABELS = [
-        "politics",
-        "entertainment",
-        "sports",
-        "science",
-        "technology",
-    ]
-
-    tweets_by_user = prepare_tweets(
-        usernames,
-        CANDIDATE_LABELS
-    )
+    tweets_by_user = prepare_tweets(usernames)
 
     similarity_finder = SimilarityFinder(threshold=0.5, k=5)
     similar_pairs = similarity_finder.detect(tweets_by_user)
@@ -63,6 +53,7 @@ def main():
     del contradictions_detector
 
     generate_report(contradictions)
+
     print("Done!")
 
 

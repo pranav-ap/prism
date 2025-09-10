@@ -5,10 +5,11 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
 class Translator:
-    def __init__(self):
-        model_id = "ModelSpace/GemmaX2-28-2B-v0.1"
-        self.tokenizer = AutoTokenizer.from_pretrained(model_id)
-        self.model = AutoModelForCausalLM.from_pretrained(model_id)
+    def __init__(self, only_lazy=False):
+        if not only_lazy:
+            model_id = "ModelSpace/GemmaX2-28-2B-v0.1"
+            self.tokenizer = AutoTokenizer.from_pretrained(model_id)
+            self.model = AutoModelForCausalLM.from_pretrained(model_id)
 
     def translate(self, text):
         text = f"""Translate the following :

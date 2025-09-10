@@ -1,6 +1,6 @@
 from typing import List
 from transformers import pipeline
-from similarity import TweetPair
+from .similarity import TweetPair
 from more_itertools import chunked
 import litellm
 import json
