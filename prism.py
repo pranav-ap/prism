@@ -6,9 +6,9 @@ from core.topics import TopicClassifier
 from core.translator import Translator
 
 
-def prepare_tweets(usernames, CANDIDATE_LABELS):
+def prepare_tweets(usernames):
     translator = Translator()
-    topic_classifier = TopicClassifier(candidate_labels=CANDIDATE_LABELS)
+    topic_classifier = TopicClassifier()
 
     tweets_by_user = {}
 
@@ -37,18 +37,7 @@ def main():
         # 'nytimeses'
     ]
 
-    CANDIDATE_LABELS = [
-        "politics",
-        "entertainment",
-        "sports",
-        "science",
-        "technology",
-    ]
-
-    tweets_by_user = prepare_tweets(
-        usernames,
-        CANDIDATE_LABELS
-    )
+    tweets_by_user = prepare_tweets(usernames)
 
     similarity_finder = SimilarityFinder(threshold=0.5, k=5)
     similar_pairs = similarity_finder.detect(tweets_by_user)
