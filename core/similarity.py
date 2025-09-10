@@ -9,14 +9,14 @@ from core.data_source import Tweet, TweetPair
 
 class SimilarityFinder:
     def __init__(self, threshold: float, k: int):
-        self.model = SentenceTransformer("all-MiniLM-L6-v2")
+        self.encoder = SentenceTransformer("all-MiniLM-L6-v2")
 
         self.threshold = threshold
         self.k = k
 
     def _get_embeddings(self, tweets: List[Tweet]):
         texts = [tweet.text for tweet in tweets]
-        return self.model.encode(texts, convert_to_numpy=True)
+        return self.encoder.encode(texts, convert_to_numpy=True)
 
     @staticmethod
     def _build_faiss_index(embeddings):

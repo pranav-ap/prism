@@ -23,8 +23,10 @@ class TopicClassifier:
     def classify(self, tweets: List[Tweet]):
         tweet_texts = [tweet.text for tweet in tweets]
 
+        # Learn topics from data & Assign each tweet a topic and a probability
         topics, probs = self.topic_model.fit_transform(tweet_texts)
 
+        # gives each topic a human-readable name instead of just an ID (0, 1, 2...)
         labels = self.topic_model.generate_topic_labels(
             nr_words=3,
             topic_prefix=False,
@@ -37,13 +39,13 @@ class TopicClassifier:
         available_topics = self.topic_model.get_topics().keys()
         label_mapping: Dict[str, str] = dict(zip(
             available_topics,
-            labels
+            labels,
         ))
 
         THRESHOLD = 0.5
 
         for tweet, topic, prob in zip(tweets, topics, probs):
-            if prob > THRESHOLD:
+            if prob < THRESHOLD:
                 continue
 
             if topic == -1:

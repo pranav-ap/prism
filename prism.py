@@ -7,7 +7,7 @@ from core.translator import Translator
 
 
 def prepare_tweets(usernames):
-    translator = Translator()
+    translator = Translator(only_lazy=True)
     topic_classifier = TopicClassifier()
 
     tweets_by_user = {}
@@ -21,6 +21,9 @@ def prepare_tweets(usernames):
 
         topic_classifier.classify(user_tweets)
         tweets_by_user[username] = user_tweets
+
+    del translator
+    del topic_classifier
 
     if len(usernames) == 1:
         username = usernames[0]
@@ -50,6 +53,7 @@ def main():
     del contradictions_detector
 
     generate_report(contradictions)
+
     print("Done!")
 
 
