@@ -4,6 +4,7 @@ from .similarity import TweetPair
 from more_itertools import chunked
 import litellm
 import json
+from prefect import task
 
 
 class ContradictionDetector:
@@ -96,6 +97,7 @@ Answer:
 
         return response
 
+    @task
     def detect(self, pairs: List[TweetPair]) -> List[TweetPair]:
         for p in pairs:
             response = self._detect(p.tweet1.text, p.tweet2.text)
@@ -109,5 +111,5 @@ Answer:
 
         return [
             pair for pair in pairs
-            if pair.contradiction_score >= self.threshold
+            if pair.contradiction_score and pair.contradiction_score >= self.threshold
         ]

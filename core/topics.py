@@ -4,6 +4,7 @@ from transformers import pipeline
 from bertopic.representation import TextGeneration
 
 from core.data_source import Tweet
+from prefect import task
 
 
 class TopicClassifier:
@@ -20,6 +21,7 @@ class TopicClassifier:
             representation_model=representation_model
         )
 
+    @task
     def classify(self, tweets: List[Tweet]):
         tweet_texts = [tweet.text for tweet in tweets]
 

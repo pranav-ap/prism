@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 from datetime import datetime
 import os
+from prefect import task
 
 from core.data_source import TweetPair
 
@@ -44,9 +45,10 @@ def generate_contradiction_summary(contradictions, output_dir):
         f.write(f"\n Found {len(contradictions)} contradictions")
 
         for i, pair in enumerate(contradictions, 1):
-            f.write(pair)
+            f.write(repr(pair))
 
 
+@task
 def generate_report(contradictions):
     print('Generating contradiction report...')
 
@@ -54,4 +56,4 @@ def generate_report(contradictions):
     os.makedirs(output_dir, exist_ok=True)
 
     generate_contradiction_summary(contradictions, output_dir)
-    plot_timeline(contradictions, output_dir)
+    # plot_timeline(contradictions, output_dir)

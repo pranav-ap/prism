@@ -42,7 +42,7 @@ Example format:
         response = litellm.completion(
             model=self.model,
             api_base=self.api_base,
-            temperature=0,
+            temperature=0.5,
             messages=[{"role": "user", "content": message}],
             response_format={
                 "type": "json_schema",
