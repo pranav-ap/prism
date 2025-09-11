@@ -3,6 +3,7 @@ from itertools import combinations
 
 import faiss
 from sentence_transformers import SentenceTransformer
+from prefect import task
 
 from core.data_source import Tweet, TweetPair
 
@@ -86,6 +87,7 @@ class SimilarityFinder:
 
         return similar_pairs
 
+    @task
     def detect(self, tweets_by_user):
         all_pairs = []
 

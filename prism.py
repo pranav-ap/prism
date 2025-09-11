@@ -4,8 +4,10 @@ from core.report import generate_report
 from core.similarity import SimilarityFinder
 from core.topics import TopicClassifier
 from core.translator import Translator
+from prefect import flow, task
 
 
+@task
 def prepare_tweets(usernames):
     translator = Translator(only_lazy=True)
     topic_classifier = TopicClassifier()
@@ -16,8 +18,8 @@ def prepare_tweets(usernames):
         print(f'Processing tweets for user: {username}')
         user_tweets = get_extracted_tweets(username)
 
-        if True:
-            translator.lazy_translate(user_tweets)
+        # if True:
+            # translator.lazy_translate(user_tweets)
 
         topic_classifier.classify(user_tweets)
         tweets_by_user[username] = user_tweets
@@ -33,6 +35,7 @@ def prepare_tweets(usernames):
     return tweets_by_user
 
 
+@flow
 def main():
     usernames = [
         'krystalball',

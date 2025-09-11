@@ -2,6 +2,7 @@ import langdetect
 langdetect.DetectorFactory.seed = 0
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from prefect import task
 
 
 class Translator:
@@ -11,6 +12,7 @@ class Translator:
             self.tokenizer = AutoTokenizer.from_pretrained(model_id)
             self.model = AutoModelForCausalLM.from_pretrained(model_id)
 
+    @task
     def translate(self, text):
         text = f"""Translate the following :
 {text}
@@ -39,6 +41,7 @@ Translation :
 
         return outputs
 
+    @task
     def lazy_translate(self, tweets):
         for t in tweets:
             lang = langdetect.detect(t.text)
