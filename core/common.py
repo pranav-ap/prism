@@ -43,6 +43,7 @@ class TweetPair:
     tweet2: Tweet
 
     similarity_score: float
+    contradiction_type: Optional[str] = None
     contradiction_score: Optional[float] = None
     contradiction_reason: Optional[str] = None
 
@@ -55,6 +56,7 @@ class TweetPair:
     
   Similarity Score      : {self.similarity_score}
   Contradiction Score   : {self.contradiction_score}
+  Contradiction Type    : {self.contradiction_type}
   Contradiction Reason  : {self.contradiction_reason}
 """
         )

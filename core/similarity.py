@@ -5,7 +5,7 @@ import faiss
 from sentence_transformers import SentenceTransformer
 from prefect import task
 
-from core.data_source import Tweet, TweetPair
+from core.common import Tweet, TweetPair
 
 
 class SimilarityFinder:

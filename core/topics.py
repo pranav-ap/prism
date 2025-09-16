@@ -3,7 +3,7 @@ from bertopic import BERTopic
 from transformers import pipeline
 from bertopic.representation import TextGeneration
 
-from core.data_source import Tweet
+from core.common import Tweet
 from prefect import task
 
 

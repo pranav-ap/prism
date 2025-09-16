@@ -1,6 +1,6 @@
 from typing import List
 from transformers import pipeline
-from .similarity import TweetPair
+from .common import TweetPair
 from more_itertools import chunked
 import litellm
 import json
@@ -55,7 +55,8 @@ class ContradictionDetectorLiteLLM:
 - "No Contradiction" → if the tweets are about the same topic or event, but do not contradict each other in a big way.
 - "Not Comparable" → if the tweets are about different topics, unrelated events, or lack comparable claims.
 
-Then, provide a short explanation for your answer in the reason field.
+Then, provide a short explanation for your answer in the reason field. 
+Finally, include a confidence value between 0 and 1 for your answer in the confidence field.
 
 Tweet 1: {tweet1}
 Tweet 2: {tweet2}
@@ -85,6 +86,7 @@ Answer:
                         "properties": {
                             "answer": {"type": "string"},
                             "reason": {"type": "string"},
+                            "confidence": {"type": "number"},
                         }
                     }
                 }
@@ -101,13 +103,9 @@ Answer:
     def detect(self, pairs: List[TweetPair]) -> List[TweetPair]:
         for p in pairs:
             response = self._detect(p.tweet1.text, p.tweet2.text)
-            p.contradiction_reason = response.get("reason", "")
-            answer = response.get("answer", "").strip().lower()
-
-            if answer == "contradiction":
-                p.contradiction_score = 1.0
-            elif answer == "no contradiction":
-                p.contradiction_score = 0.0
+            p.contradiction_reason = response.get("reason", "").strip()
+            p.contradiction_type = response.get("answer", "").strip().lower()
+            p.contradiction_score = response.get("confidence", 0.0)
 
         return [
             pair for pair in pairs

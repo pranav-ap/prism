@@ -1,5 +1,5 @@
 from core.contra import ContradictionDetectorLiteLLM
-from core.data_source import get_extracted_tweets
+from core.common import get_extracted_tweets
 from core.report import generate_report
 from core.similarity import SimilarityFinder
 from core.topics import TopicClassifier
@@ -9,7 +9,7 @@ from prefect import flow, task
 
 @task
 def prepare_tweets(usernames):
-    translator = Translator()
+    # translator = Translator()
     topic_classifier = TopicClassifier()
 
     tweets_by_user = {}
@@ -18,13 +18,13 @@ def prepare_tweets(usernames):
         print(f'Processing tweets for user: {username}')
         user_tweets = get_extracted_tweets(username)
 
-        if True:
-            translator.lazy_translate(user_tweets)
+        # if True:
+        #     translator.lazy_translate(user_tweets)
 
         topic_classifier.classify(user_tweets)
         tweets_by_user[username] = user_tweets
 
-    del translator
+    # del translator
     del topic_classifier
 
     if len(usernames) == 1:
@@ -38,9 +38,7 @@ def prepare_tweets(usernames):
 @flow
 def main():
     usernames = [
-        'krystalball',
-        # 'nytimes',
-        # 'nytimeses'
+        'clown',
     ]
 
     tweets_by_user = prepare_tweets(usernames)
@@ -52,7 +50,7 @@ def main():
 
     contradictions_detector = ContradictionDetectorLiteLLM(threshold=0.5)
     contradictions = contradictions_detector.detect(similar_pairs)
-    print(f"Found {len(contradictions)} total contradictions!")
+    print(f"Ran Detector on {len(contradictions)} pairs")
     del contradictions_detector
 
     generate_report(contradictions)
