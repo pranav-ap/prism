@@ -40,7 +40,7 @@ Translation :
 
         return outputs
 
-    @task
+    @task(cache_policy=None)
     def lazy_translate(self, tweets):
         for t in tweets:
             lang = langdetect.detect(t.text)
