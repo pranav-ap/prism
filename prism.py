@@ -9,7 +9,7 @@ from prefect import flow, task
 
 @task
 def prepare_tweets(usernames):
-    # translator = Translator()
+    translator = Translator()
     topic_classifier = TopicClassifier()
 
     tweets_by_user = {}
@@ -18,13 +18,13 @@ def prepare_tweets(usernames):
         print(f'Processing tweets for user: {username}')
         user_tweets = get_extracted_tweets(username)
 
-        # if True:
-        #     translator.lazy_translate(user_tweets)
+        if True:
+            translator.lazy_translate(user_tweets)
 
         topic_classifier.classify(user_tweets)
         tweets_by_user[username] = user_tweets
 
-    # del translator
+    del translator
     del topic_classifier
 
     if len(usernames) == 1:
